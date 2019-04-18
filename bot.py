@@ -31,7 +31,7 @@ class Bot(discord.Client):
 
         print(randomList)
 
-        adreans_team_string = "Team 1: \n 1: Adriean\n"
+        adreans_team_string = "Team 1: \n 1: Adrian\n"
         fins_team_string = "Team 2: \n 1: Fin\n"
         for x in range(0, 4):
             adreans_team_string = adreans_team_string + str(x+2) + ": " + str(randomList.get(x)) + "\n"
