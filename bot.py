@@ -1,7 +1,7 @@
 import discord
 import json
 import random
-from classes.cs import CounterStrikeGame
+from classes.CounterStrikeGame import CounterStrikeGame
 
 class Bot(discord.Client):
 
