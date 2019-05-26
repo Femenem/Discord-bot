@@ -3,6 +3,6 @@ class Movie(object):
 
     def __init__(self, arg):
         super(Movie, self).__init__()
-        self.arg = arg
-
-    
+        self.title = ""
+        self.length = 0
+        self.imdbRating = 0.0

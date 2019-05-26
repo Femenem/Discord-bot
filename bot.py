@@ -4,7 +4,12 @@ import random
 from classes.CounterStrikeGame import CounterStrikeGame
 
 helpMessage = """
-!cs help = This help message.
+!god help = This help message.
+### Randomised commands ###
+!god choice [choice, choice, choice] = Picks an option at random
+!god coin = Flip a coin
+
+### CS commands ###
 !cs status = See the current status of the CS game.
 !cs reset = Resets the CS game to default settings. (Use this after completing a game)
 !cs mode [comp|br] = Sets the mode for the cs game (Competitive or Battle Royale)
@@ -15,7 +20,7 @@ helpMessage = """
 """
 
 class Bot(discord.Client):
-    go = False
+    go = False # Used for cs
 
     async def on_ready(self):
         self.csGame = CounterStrikeGame();
@@ -32,16 +37,29 @@ class Bot(discord.Client):
         if message.content == 'ping':
             await message.channel.send('pong')
 
-        if message.content.startswith('!cs'):
-            option = message.content[4:].split(' ')
+        if message.content.startswith('!god'):
+            option = message.content[5:].split(' ')
             if(option[0] == 'help'):
                 await message.channel.send(helpMessage)
+            #####################
+            # Random options        #
+            #####################
+            if(option[0] == 'choice'):
+                await self.random_choice(message)
+            if(option[0] == 'flip'):
+                await self.coin_flip(message)
+
+
+        #####################
+        # Cs options        #
+        #####################
+        if message.content.startswith('!cs'):
+            option = message.content[4:].split(' ')
 
             if(option[0] == 'mode'):
                 if(len(option) <= 1): # No mode specified
                     await message.channel.send("Please specify the mode, Comp or Br")
                 else:
-                    print(option[1].lower())
                     if(option[1].lower() == "comp" or option[1].lower() == "br"):
                         self.csGame.set_mode(option[1].lower())
                         await message.channel.send("Mode set to: " + self.csGame.get_mode(), delete_after=10)
@@ -87,7 +105,6 @@ class Bot(discord.Client):
                     await message.channel.send("Added players", delete_after=5)
             if(option[0] == 'go'):
                 canGo = self.csGame.check_all()
-                print(canGo)
                 if(canGo == "go" and self.go == False): ## All set so we can go for comp
                     self.go = True
                     await message.channel.send(self.csGame.get_go_state())
@@ -130,7 +147,7 @@ class Bot(discord.Client):
                         if(turn == 6): # End conditon when all maps have been picked/banned
                             for message in self.csGame.get_message_tracker():
                                 if(len(message.content) > 10):
-                                    print("Content too long to be map name.")
+                                    ## Content too long to be map name.
                                     continue
                                 else:
                                     self.csGame.pick_map(message.content)
@@ -152,21 +169,20 @@ class Bot(discord.Client):
         maps = self.csGame.get_current_maps()
         for message in self.csGame.get_message_tracker():
             if(len(message.content) > 10):
-                print("Content too long to be map name.")
+                ## Content too long to be map name.
                 continue
             delete = True
             for map in maps: # Linear search
                 if(message.content == map): # If map still in current maps
                     delete = False # Dont delete
             if(delete == True):
-                print("Deleting message: " + str(message.content))
                 await message.delete()
                 self.csGame.remove_message_from_tracker(message)
                 continue
 
         for message in self.csGame.get_message_tracker(): # Update reactions
             if(len(message.content) > 10):
-                print("Content too long to be map name.")
+                ## Content too long to be map name.
                 continue
 
             if(message.reactions != []): # message has reactions
@@ -189,35 +205,47 @@ class Bot(discord.Client):
                 await message.edit(content=newMessage)
                 break
 
+    async def random_choice(self, message):
+        choices = message.content[11:].split(',')
+        randomNumber = random.randint(0, len(choices)-1)
+        await message.channel.send(choices[randomNumber])
 
-    async def cs_random_teams(self, message):
-        specificNumbers = [0,1,2,3,4,5,6,7]
-        names = message.content[14:].split(',')
-        randomList = {}
-        if len(names) != 10:
-            await message.channel.send("There aren't enough people for cs, you need 10 names (First 2 captains) but you gave me " + str(len(names)-1))
-            return
-        captains = [names[0], names[1]]
-        del names[0:2]
-        for x in range(0, 8):
-            number = random.choice(specificNumbers) # pick random number
-            specificNumbers.remove(number) # remove number from list
-            randomList[number] = names[x] # set name and random number
+    async def coin_flip(self, message):
+        roll = random.randint(0, 1)
+        if (roll == 0):
+            coin = "heads"
+        elif (roll == 1):
+            coin = "tails"
+        await message.channel.send("<@" + str(message.author.id) + "> flipped a coin and it landed on " + coin)
 
-        # print(names) DEBUG MESSAGE
 
-        team_1_string = "Team 1: \n 1: " + str(captains[0]) + "\n"
-        team_2_string = "Team 2: \n 1: " + str(captains[1]) + "\n"
-        for x in range(0, 4):
-            team_1_string = team_1_string + str(x+2) + ": " + str(randomList.get(x)) + "\n"
-            team_2_string = team_2_string + str(x+2) + ": " + str(randomList.get(x+4)) + "\n"
-
-        await message.channel.send(team_1_string + "\n" + team_2_string)
+    # async def cs_random_teams(self, message):
+    #     specificNumbers = [0,1,2,3,4,5,6,7]
+    #     names = message.content[14:].split(',')
+    #     randomList = {}
+    #     if len(names) != 10:
+    #         await message.channel.send("There aren't enough people for cs, you need 10 names (First 2 captains) but you gave me " + str(len(names)-1))
+    #         return
+    #     captains = [names[0], names[1]]
+    #     del names[0:2]
+    #     for x in range(0, 8):
+    #         number = random.choice(specificNumbers) # pick random number
+    #         specificNumbers.remove(number) # remove number from list
+    #         randomList[number] = names[x] # set name and random number
+    #
+    #
+    #     team_1_string = "Team 1: \n 1: " + str(captains[0]) + "\n"
+    #     team_2_string = "Team 2: \n 1: " + str(captains[1]) + "\n"
+    #     for x in range(0, 4):
+    #         team_1_string = team_1_string + str(x+2) + ": " + str(randomList.get(x)) + "\n"
+    #         team_2_string = team_2_string + str(x+2) + ": " + str(randomList.get(x+4)) + "\n"
+    #
+    #     await message.channel.send(team_1_string + "\n" + team_2_string)
 
 loginFile= "settings/login.json"
 loginData = open(loginFile)
 login = json.load(loginData)
 # type = discord.ActivityType(value=discord.ActivityType.playing)
-status = discord.Activity(name="!cs help", state="!cs help", type=discord.ActivityType.playing, details="!cs help")
+status = discord.Activity(name="!god help", state="!god help", type=discord.ActivityType.playing, details="!god help")
 client = Bot(activity=status)
 client.run(login['token'])
