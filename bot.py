@@ -3,10 +3,18 @@ import json
 import random
 from classes.CounterStrikeGame import CounterStrikeGame
 
-class Bot(discord.Client):
+helpMessage = """
+!cs help = This help message.
+!cs status = See the current status of the CS game.
+!cs reset = Resets the CS game to default settings. (Use this after completing a game)
+!cs mode [comp|br] = Sets the mode for the cs game (Competitive or Battle Royale)
+!cs captains [@name, @name] = Sets the captains for the cs game
+!cs players [name,name,name,name...] = Sets the players for the cs game
+!cs go = Starts the veto/random teams process.
+!cs randomise = Re-randomise the teams for the cs game. (used after !cs go)
+"""
 
-    # def __init__(self):
-    #     self.go = False
+class Bot(discord.Client):
     go = False
 
     async def on_ready(self):
@@ -26,6 +34,20 @@ class Bot(discord.Client):
 
         if message.content.startswith('!cs'):
             option = message.content[4:].split(' ')
+            if(option[0] == 'help'):
+                await message.channel.send(helpMessage)
+
+            if(option[0] == 'mode'):
+                if(len(option) <= 1): # No mode specified
+                    await message.channel.send("Please specify the mode, Comp or Br")
+                else:
+                    print(option[1].lower())
+                    if(option[1].lower() == "comp" or option[1].lower() == "br"):
+                        self.csGame.set_mode(option[1].lower())
+                        await message.channel.send("Mode set to: " + self.csGame.get_mode(), delete_after=10)
+                    else:
+                        await message.channel.send("Mode can only be set to comp or br, dumbass")
+
             if(option[0] == 'randomise'):
                 if(len(option) == 1):
                     if(self.go == True):
@@ -65,7 +87,8 @@ class Bot(discord.Client):
                     await message.channel.send("Added players", delete_after=5)
             if(option[0] == 'go'):
                 canGo = self.csGame.check_all()
-                if(canGo == "go" and self.go == False): ## All set so we can go
+                print(canGo)
+                if(canGo == "go" and self.go == False): ## All set so we can go for comp
                     self.go = True
                     await message.channel.send(self.csGame.get_go_state())
                     captains = self.csGame.get_captains()
@@ -78,8 +101,12 @@ class Bot(discord.Client):
                         for map in maps:
                             if(trackedMessage.content == map):
                                 await trackedMessage.add_reaction("🚫") # 🚫 ✅
+
+                elif(canGo == "gobr" and self.go == False): # All set so we can go for br
+                    self.csGame.do_br_teams()
+                    await message.channel.send(self.csGame.print_br_teams())
                 else: # Check failed so print message
-                    if(canGo == "go"):
+                    if(self.go == True):
                         await message.channel.send("You have to !cs reset before starting another game")
                     else:
                         await message.channel.send(canGo)
@@ -190,5 +217,7 @@ class Bot(discord.Client):
 loginFile= "settings/login.json"
 loginData = open(loginFile)
 login = json.load(loginData)
-client = Bot()
+# type = discord.ActivityType(value=discord.ActivityType.playing)
+status = discord.Activity(name="!cs help", state="!cs help", type=discord.ActivityType.playing, details="!cs help")
+client = Bot(activity=status)
 client.run(login['token'])
