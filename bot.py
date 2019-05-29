@@ -2,12 +2,18 @@ import discord
 import json
 import random
 from classes.CounterStrikeGame import CounterStrikeGame
+from classes.Movie import Movie
 
 helpMessage = """
+```
+##### GOD COMMANDS #####
 !god help = This help message.
 ### Randomised commands ###
-!god choice [choice, choice, choice] = Picks an option at random
-!god coin = Flip a coin
+!god choice [choice, choice, choice] = Picks an option at random.
+!god coin = Flip a coin.
+
+### Movie commands ###
+!god movie [title] = Get info about a specific movie.
 
 ### CS commands ###
 !cs status = See the current status of the CS game.
@@ -17,6 +23,7 @@ helpMessage = """
 !cs players [name,name,name,name...] = Sets the players for the cs game
 !cs go = Starts the veto/random teams process.
 !cs randomise = Re-randomise the teams for the cs game. (used after !cs go)
+```
 """
 
 class Bot(discord.Client):
@@ -39,10 +46,18 @@ class Bot(discord.Client):
 
         if message.content.startswith('!god'):
             option = message.content[5:].split(' ')
-            if(option[0] == 'help'):
+            if(option[0].lower() == 'help'):
                 await message.channel.send(helpMessage)
+
+            if(option[0].lower() == 'movie'):
+                movieString = ""
+                for op in option:
+                    if(op != 'movie'):
+                        movieString += op + " "
+                movie = Movie(movieString)
+                await message.channel.send(movie.print_movie())
             #####################
-            # Random options        #
+            # Random options    #
             #####################
             if(option[0] == 'choice'):
                 await self.random_choice(message)
