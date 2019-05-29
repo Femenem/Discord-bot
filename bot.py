@@ -8,6 +8,7 @@ helpMessage = """
 ```
 ##### GOD COMMANDS #####
 !god help = This help message.
+!god dev = The open source github repo.
 ### Randomised commands ###
 !god choice [choice, choice, choice] = Picks an option at random.
 !god coin = Flip a coin.
@@ -48,7 +49,12 @@ class Bot(discord.Client):
             option = message.content[5:].split(' ')
             if(option[0].lower() == 'help'):
                 await message.channel.send(helpMessage)
-
+            if(option[0].lower() == 'dev'):
+                devUrl = "https://github.com/Mattmor/Discord-bot"
+                await message.channel.send("This is the dev repo: " + devUrl)
+            #####################
+            # Movie options     #
+            #####################
             if(option[0].lower() == 'movie'):
                 movieString = ""
                 for op in option:
