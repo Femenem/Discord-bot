@@ -2,11 +2,13 @@ import requests # Http requests
 from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup # html parser
+import sqlite3
 
 class Movie():
     """docstring for Movie."""
 
     def __init__(self, searchTitle):
+        self.imdbID = ""
         self.title = ""
         self.length = ""
         self.imdbRating = 0.0
@@ -30,11 +32,21 @@ class Movie():
                         count += 1
                         if 'TV Episode' in str(result):
                             continue
+                        elif 'TV Series' in str(result):
+                            continue
                         else: # First movie that isn't a tv series
                             link = result.find('a')
-                            fullUrl = "https://www.imdb.com" + link['href']
-                            self.scrape_title_data(fullUrl)
-                            break
+                            self.imdbID = link['href'][7:-1]
+                            values = self.check_movie_in_database(self.imdbID) # Check if values are in database
+                            if(values != None):
+                                print("Loading movie from database")
+                                self.load_movie_from_database(values)
+                                break
+                            else:
+                                print("Scraping movie from IMDB")
+                                fullUrl = "https://www.imdb.com" + link['href']
+                                self.scrape_title_data(fullUrl)
+                                break
 
                     # print(html.find_all('tr', class_="findResult"))
                 else:
@@ -54,11 +66,6 @@ class Movie():
                 and content_type.find('html') > -1)
 
     def log_error(self, e):
-        """
-        It is always a good idea to log errors.
-        This function just prints them, but you can
-        make it do anything.
-        """
         print(e)
 
     def scrape_title_data(self, url):
@@ -106,9 +113,42 @@ class Movie():
                     summary = html.find('div', class_="summary_text")
                     self.summary = summary.text.strip()
 
+                    self.save_to_database()
+
         except RequestException as e:
             self.log_error('Error during requests to {0} : {1}'.format(url, str(e)))
             return None
+
+    def save_to_database(self):
+        with sqlite3.connect('data/movies.db') as db:
+            c = db.cursor()
+            genres = ""
+            for genre in self.genres:
+                genres += genre + " "
+            data = [self.imdbID, self.title, self.length, self.imdbRating, genres, self.releaseDate, self.ageRating, self.summary]
+            c.execute('''INSERT INTO Movies
+            (IMDBID, Title, Length, Rating, Genres, ReleaseDate, AgeRating, Summary)
+            values(?,?,?,?,?,?,?,?);
+            ''', data)
+            db.commit()
+
+    def load_movie_from_database(self, values):
+        self.imdbID = values[1]
+        self.title = values[2]
+        self.length = values[3]
+        self.imdbRating = values[4]
+        self.releaseDate = values[5]
+        for genre in values[6].split(" "):
+            self.genres.append(genre)
+        self.ageRating = values[7]
+        self.summary = values[8]
+
+    def check_movie_in_database(self, id):
+        id = (id,)
+        with sqlite3.connect('data/movies.db') as db:
+            c = db.cursor()
+            c.execute('SELECT * FROM Movies WHERE IMDBID=?', id)
+            return c.fetchone()
 
     def print_movie(self):
         string = "```"

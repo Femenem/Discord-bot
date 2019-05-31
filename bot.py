@@ -3,6 +3,7 @@ import json
 import random
 from classes.CounterStrikeGame import CounterStrikeGame
 from classes.Movie import Movie
+import sqlite3
 
 helpMessage = """
 ```
@@ -29,10 +30,11 @@ helpMessage = """
 
 class Bot(discord.Client):
     go = False # Used for cs
-
+    movieLists = []
     async def on_ready(self):
         self.csGame = CounterStrikeGame();
         self.go = False
+        self.load_movie_lists()
         print('Logged on as', self.user)
 
     async def on_message(self, message):
@@ -239,34 +241,15 @@ class Bot(discord.Client):
             coin = "tails"
         await message.channel.send("<@" + str(message.author.id) + "> flipped a coin and it landed on " + coin)
 
-
-    # async def cs_random_teams(self, message):
-    #     specificNumbers = [0,1,2,3,4,5,6,7]
-    #     names = message.content[14:].split(',')
-    #     randomList = {}
-    #     if len(names) != 10:
-    #         await message.channel.send("There aren't enough people for cs, you need 10 names (First 2 captains) but you gave me " + str(len(names)-1))
-    #         return
-    #     captains = [names[0], names[1]]
-    #     del names[0:2]
-    #     for x in range(0, 8):
-    #         number = random.choice(specificNumbers) # pick random number
-    #         specificNumbers.remove(number) # remove number from list
-    #         randomList[number] = names[x] # set name and random number
-    #
-    #
-    #     team_1_string = "Team 1: \n 1: " + str(captains[0]) + "\n"
-    #     team_2_string = "Team 2: \n 1: " + str(captains[1]) + "\n"
-    #     for x in range(0, 4):
-    #         team_1_string = team_1_string + str(x+2) + ": " + str(randomList.get(x)) + "\n"
-    #         team_2_string = team_2_string + str(x+2) + ": " + str(randomList.get(x+4)) + "\n"
-    #
-    #     await message.channel.send(team_1_string + "\n" + team_2_string)
+    def load_movie_lists(self):
+        # TODO: Load MovieLists on startup
+        with sqlite3.connect('data/movies.db') as db:
+            c = db.cursor()
+            c.execute()
 
 loginFile= "settings/login.json"
 loginData = open(loginFile)
 login = json.load(loginData)
-# type = discord.ActivityType(value=discord.ActivityType.playing)
 status = discord.Activity(name="!god help", state="!god help", type=discord.ActivityType.playing, details="!god help")
 client = Bot(activity=status)
 client.run(login['token'])
