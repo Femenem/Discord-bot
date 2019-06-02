@@ -39,11 +39,11 @@ class Movie():
                             self.imdbID = link['href'][7:-1]
                             values = self.check_movie_in_database(self.imdbID) # Check if values are in database
                             if(values != None):
-                                print("Loading movie from database")
+                                # print("Loading movie from database")
                                 self.load_movie_from_database(values)
                                 break
                             else:
-                                print("Scraping movie from IMDB")
+                                # print("Scraping movie from IMDB")
                                 fullUrl = "https://www.imdb.com" + link['href']
                                 self.scrape_title_data(fullUrl)
                                 break
