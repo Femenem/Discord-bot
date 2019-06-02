@@ -34,7 +34,7 @@ class Bot(discord.Client):
     async def on_ready(self):
         self.csGame = CounterStrikeGame();
         self.go = False
-        self.load_movie_lists()
+        # self.load_movie_lists()
         print('Logged on as', self.user)
 
     async def on_message(self, message):
@@ -241,11 +241,11 @@ class Bot(discord.Client):
             coin = "tails"
         await message.channel.send("<@" + str(message.author.id) + "> flipped a coin and it landed on " + coin)
 
-    def load_movie_lists(self):
-        # TODO: Load MovieLists on startup
-        with sqlite3.connect('data/movies.db') as db:
-            c = db.cursor()
-            c.execute()
+    # def load_movie_lists(self):
+    #     # TODO: Load MovieLists on startup
+    #     with sqlite3.connect('data/movies.db') as db:
+    #         c = db.cursor()
+    #         c.execute()
 
 loginFile= "settings/login.json"
 loginData = open(loginFile)
