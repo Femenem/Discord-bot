@@ -3,7 +3,27 @@ import json
 import random
 from classes.CounterStrikeGame import CounterStrikeGame
 from classes.Movie import Movie
+from classes.Elevator import Elevator
 import sqlite3
+import logging
+
+# create logger with 'spam_application'
+logger = logging.getLogger('god_bot')
+logger.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('bot.log')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(fh)
+logger.addHandler(ch)
+
 
 helpMessage = """
 ```
@@ -29,13 +49,18 @@ helpMessage = """
 """
 
 class Bot(discord.Client):
+    intents = discord.Intents.all()
+    client = discord.Client(intents=intents)
     go = False # Used for cs
     movieLists = []
+
     async def on_ready(self):
         self.csGame = CounterStrikeGame();
         self.go = False
-        # self.load_movie_lists()
-        print('Logged on as', self.user)
+        self.targetGuild = None
+        self.elevator = None
+        self.load_movie_lists()
+        logger.info('Logged on as ' + self.user.name)
 
     async def on_message(self, message):
         # don't respond to ourselves
@@ -151,6 +176,18 @@ class Bot(discord.Client):
                     else:
                         await message.channel.send(canGo)
 
+        if(message.content.lower().startswith('!floor')):
+            if(message.guild == self.targetGuild):
+                if(message.author.voice != None):
+                    floor = message.content[7:]
+                    # print("trying to add user...")
+                    await self.elevator.add_user(message, floor)
+                else: # User not in a voice channel
+                    await message.channel.send("You need to be connected to a voice channel first.")
+            else: # Not target guild
+                logger.info("Error, not target guild")
+
+
     async def on_reaction_add(self, reaction, user):
         if(self.go == True): # Running cs sunday
             if(reaction.message.author == self.user): # If this bot put the message there
@@ -252,4 +289,26 @@ loginData = open(loginFile)
 login = json.load(loginData)
 status = discord.Activity(name="!god help", state="!god help", type=discord.ActivityType.playing, details="!god help")
 client = Bot(activity=status)
-client.run(login['token'])
+
+OPUS_LIBS = ['libopus-0.x86.dll', 'libopus-0.x64.dll', 'libopus-0.dll', 'libopus.so.0', 'libopus.0.dylib']
+
+def load_opus_lib(opus_libs=OPUS_LIBS):
+    if discord.opus.is_loaded():
+        return True
+
+    for opus_lib in opus_libs:
+        try:
+            discord.opus.load_opus(opus_lib)
+            return
+        except OSError:
+            pass
+
+        raise RuntimeError('Could not load an opus lib. Tried %s' % (', '.join(opus_libs)))
+
+opusLoaded = load_opus_lib()
+if(opusLoaded):
+    print("Opus already loaded")
+    client.run(login['token'])
+else:
+    discord.opus.load_opus('libopus-0.dll')
+    client.run(login['token'])
